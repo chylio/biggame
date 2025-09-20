@@ -35,8 +35,8 @@
             position: relative;
             width: 80vmin;
             height: 80vmin;
-            max-width: 600px;
-            max-height: 600px;
+            max-width: 800px;
+            max-height: 800px;
         }
 
         .board {
@@ -44,12 +44,13 @@
             height: 100%;
             position: relative;
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(7, 1fr);
             border: 4px solid #166534;
             border-radius: 1rem;
             overflow: hidden;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background-color: #d1fae5;
         }
 
         .tile {
@@ -64,28 +65,17 @@
             font-size: 0.7rem;
             position: relative;
         }
-
-        .tile-corner {
-            background-color: #bbf7d0;
-            font-size: 0.8rem;
-        }
-
+        
+        /* 根據圖片中的顏色定義新的 Tile 類別 */
+        .tile-corner { background-color: #bbf7d0; }
+        .tile-gray { background-color: #d1d5db; }
+        .tile-yellow { background-color: #fef08a; }
+        .tile-purple { background-color: #a78bfa; }
+        
         .tile-start {
             background-color: #34d399;
             color: white;
             font-size: 0.9rem;
-        }
-
-        .tile-special {
-            background-color: #99f6e4;
-        }
-
-        .tile-prop {
-            background-color: #fef08a;
-        }
-
-        .tile-event {
-            background-color: #fecaca;
         }
         
         .tile-title {
@@ -188,6 +178,15 @@
             border-radius: 0.5rem;
         }
 
+        .player-color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid white;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -237,6 +236,22 @@
             margin-bottom: 1rem;
         }
 
+        .log-panel {
+            grid-area: log;
+            background-color: white;
+            border: 2px solid #a3e635;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-y: auto;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column-reverse;
+            font-size: 0.8rem;
+        }
+        .log-message {
+            margin-bottom: 0.5rem;
+        }
+
     </style>
 </head>
 <body>
@@ -265,7 +280,9 @@
         
     <div class="main-game-area">
         <div class="board-container">
-            <div class="board" id="board"></div>
+            <div class="board" id="board">
+                <!-- Tiles will be dynamically created here -->
+            </div>
             <div id="player-tokens-container"></div>
         </div>
 
@@ -287,7 +304,6 @@
 
     <script>
         const board = document.getElementById('board');
-        const boardContainer = document.getElementById('board-container');
         const rollDiceBtn = document.getElementById('roll-dice-btn');
         const diceDisplay = document.getElementById('dice-display');
         const playerTokensContainer = document.getElementById('player-tokens-container');
@@ -300,8 +316,8 @@
         const gameModal = document.getElementById('game-modal');
         const modalContent = document.getElementById('modal-content');
         const closeModalBtn = document.getElementById('close-modal-btn');
+        let eventLog;
         
-        let boardSize = 10;
         let players = [];
         let currentPlayerIndex = 0;
         let gameStarted = false;
@@ -310,63 +326,63 @@
         const totalTurns = 20;
 
         const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981'];
+        
+        const pathIndices = [
+            0, 1, 2, 3, 4, 5, 6,
+            23, 22, 21, 20, 19,
+            18, 17, 16, 15, 14, 13, 12,
+            11, 10, 9, 8, 7
+        ];
 
         const tilesData = [
-            { type: 'start', name: '健康出發', text: '+20 HP', effect: (player) => { player.hp += 20; return '經過或停留，獲得 20 HP！'; } },
-            { type: 'prop', name: '水果蔬菜市場', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '營養事件', text: '抽卡', effect: (player) => drawEventCard(player, '營養') },
-            { type: 'prop', name: '舞蹈教室', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '運動事件', text: '抽卡', effect: (player) => drawEventCard(player, '運動') },
-            { type: 'prop', name: '冥想空間', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '睡眠事件', text: '抽卡', effect: (player) => drawEventCard(player, '睡眠') },
-            { type: 'prop', name: '家庭晚餐', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '壓力事件', text: '抽卡', effect: (player) => drawEventCard(player, '壓力管理') },
-            { type: 'special', name: '自我照顧日', text: '+15 HP', effect: (player) => { player.hp += 15; return '享受「自我照顧日」，獲得 15 HP！'; } },
-            
-            { type: 'prop', name: '無菸公園', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'prop', name: '社團活動', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            
-            { type: 'event', name: '高風險物質事件', text: '抽卡', effect: (player) => drawEventCard(player, '高風險物質') },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'event', name: '社交連結事件', text: '抽卡', effect: (player) => drawEventCard(player, '社交連結') },
-            
-            { type: 'prop', name: '健身房', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'prop', name: '圖書館', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            
-            { type: 'event', name: '營養事件', text: '抽卡', effect: (player) => drawEventCard(player, '營養') },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'event', name: '運動事件', text: '抽卡', effect: (player) => drawEventCard(player, '運動') },
-            
-            { type: 'prop', name: '公園', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'prop', name: '心理諮商中心', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            
-            { type: 'event', name: '睡眠事件', text: '抽卡', effect: (player) => drawEventCard(player, '睡眠') },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'event', name: '壓力管理事件', text: '抽卡', effect: (player) => drawEventCard(player, '壓力管理') },
-            
-            { type: 'prop', name: '社區中心', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'prop', name: '家', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            
-            { type: 'event', name: '社交連結事件', text: '抽卡', effect: (player) => drawEventCard(player, '社交連結') },
-            { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' }, { type: 'empty', name: '', text: '' },
-            { type: 'event', name: '高風險物質事件', text: '抽卡', effect: (player) => drawEventCard(player, '高風險物質') },
-            
-            { type: 'corner', name: '不健康陷阱', text: '失去一回合', effect: (player) => { player.skipTurn = true; return '進入「不健康陷阱」，失去下一次行動！'; } },
-            { type: 'prop', name: '戶外運動場', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '運動事件', text: '抽卡', effect: (player) => drawEventCard(player, '運動') },
-            { type: 'prop', name: '健身中心', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '營養事件', text: '抽卡', effect: (player) => drawEventCard(player, '營養') },
-            { type: 'prop', name: '農夫市集', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '睡眠事件', text: '抽卡', effect: (player) => drawEventCard(player, '睡眠') },
-            { type: 'prop', name: '家庭醫生', text: '+3 HP', effect: (player) => { player.hp += 3; return `停留「${this.name}」，獲得 3 HP！`; } },
-            { type: 'event', name: '壓力管理事件', text: '抽卡', effect: (player) => drawEventCard(player, '壓力管理') },
-            { type: 'corner', name: '壞習慣繞路', text: '進監獄', effect: (player) => { player.position = 9; player.skipTurn = true; return '走到「壞習慣繞路」，直接進入「不健康陷阱」，失去下一次行動！'; } },
-        ].filter(tile => tile.name !== '');
+            { name: '健康出發', text: '', color: 'gray', effect: (player) => { player.hp += 20; return `經過「健康出發」，獲得 20 HP！`; } },
+            { name: '健康檢查', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「健康檢查」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '拒絕菸酒', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「拒絕菸酒」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '深呼吸', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「深呼吸」，獲得 5 HP！`; } },
+            { name: '環習慣繞路', text: '進監獄', color: 'gray', effect: (player) => { player.position = 12; player.skipTurn = true; return '走到「環習慣繞路」，直接進入「不健康陷阱」，失去下一次行動！'; } },
 
+            { name: '舞蹈教室', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「舞蹈教室」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '水果蔬菜市場', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「水果蔬菜市場」，獲得 5 HP！`; } },
+            { name: '規律運動', text: '', color: 'purple', effect: (player) => {
+                 const roll = Math.floor(Math.random() * 2) === 0;
+                 const hpChange = roll ? 10 : -5;
+                 player.hp += hpChange;
+                 updatePlayerStatus();
+                 return `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${hpChange} HP！`; 
+            } },
+            { name: '無菸公園', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「無菸公園」，獲得 5 HP！`; } },
+
+            { name: '不健康陷阱', text: '失去一回合', color: 'gray', effect: (player) => { player.skipTurn = true; return '進入「不健康陷阱」，失去下一次行動！'; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '冥想空間', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「冥想空間」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '家庭晚餐', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「家庭晚餐」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '自我照顧日', text: '+15 HP', color: 'gray', effect: (player) => { player.hp += 15; return `享受「自我照顧日」，獲得 15 HP！`; } },
+
+            { name: '參加社團', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「參加社團」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
+            { name: '規律運動', text: '', color: 'purple', effect: (player) => {
+                 const roll = Math.floor(Math.random() * 2) === 0;
+                 const hpChange = roll ? 10 : -5;
+                 player.hp += hpChange;
+                 updatePlayerStatus();
+                 return `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${hpChange} HP！`; 
+            } },
+            { name: '早晨早起', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「早晨早起」，獲得 5 HP！`; } },
+            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) }
+        ];
+        
+        const tilePositions = [
+            { row: 6, col: 0 }, { row: 6, col: 1 }, { row: 6, col: 2 }, { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 },
+            { row: 5, col: 0 }, { row: 4, col: 0 }, { row: 3, col: 0 }, { row: 2, col: 0 }, { row: 1, col: 0 },
+            { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 }, { row: 0, col: 5 }, { row: 0, col: 6 },
+            { row: 1, col: 6 }, { row: 2, col: 6 }, { row: 3, col: 6 }, { row: 4, col: 6 }, { row: 5, col: 6 }
+        ];
+        
         const eventCards = {
             '營養': [
                 { text: '早餐吃燕麥＋水果', hpChange: 10 },
@@ -402,31 +418,47 @@
             }, 3000);
         }
 
+        function addLogMessage(msg) {
+            if (!eventLog) return;
+            const p = document.createElement('p');
+            p.classList.add('log-message');
+            p.textContent = msg;
+            eventLog.prepend(p);
+        }
+
         function createBoard() {
-            const tilePositions = [
-                ...Array.from({ length: 10 }, (_, i) => ({ row: 9, col: i })),
-                ...Array.from({ length: 9 }, (_, i) => ({ row: 8 - i, col: 9 })),
-                ...Array.from({ length: 9 }, (_, i) => ({ row: 0, col: 8 - i })),
-                ...Array.from({ length: 9 }, (_, i) => ({ row: 1 + i, col: 0 }))
-            ];
+            board.innerHTML = '';
             
+            for(let i=0; i<49; i++) {
+                const emptyTile = document.createElement('div');
+                emptyTile.style.backgroundColor = '#ecfdf5';
+                board.appendChild(emptyTile);
+            }
+            
+            const logPanel = document.createElement('div');
+            logPanel.classList.add('log-panel');
+            logPanel.style.gridRow = '2 / 7';
+            logPanel.style.gridColumn = '2 / 7';
+            logPanel.innerHTML = '<h3 class="text-xl font-bold text-center mb-2">事件記錄</h3><div id="event-log-container"><p class="log-message">歡迎來到生活醫學大富翁！</p></div>';
+            board.appendChild(logPanel);
+            
+            eventLog = document.getElementById('event-log-container');
+
             tilesData.forEach((tile, index) => {
                 const tileDiv = document.createElement('div');
                 tileDiv.classList.add('tile');
                 tileDiv.dataset.index = index;
                 
-                if (tile.type === 'start' || tile.name === '不健康陷阱' || tile.name === '壞習慣繞路') {
-                    tileDiv.classList.add('tile-corner');
-                } else if (tile.type === 'special') {
-                    tileDiv.classList.add('tile-special');
-                } else if (tile.type === 'prop') {
-                    tileDiv.classList.add('tile-prop');
-                } else if (tile.type === 'event') {
-                    tileDiv.classList.add('tile-event');
-                }
-
-                if (tile.type === 'start') {
-                     tileDiv.classList.add('tile-start', 'font-bold');
+                if (tile.color === 'start') {
+                    tileDiv.classList.add('tile-start', 'font-bold');
+                } else if (tile.color === 'gray') {
+                    tileDiv.classList.add('tile-gray', 'font-bold');
+                } else if (tile.color === 'yellow') {
+                    tileDiv.classList.add('tile-yellow');
+                } else if (tile.color === 'purple') {
+                    tileDiv.classList.add('tile-purple');
+                } else {
+                    tileDiv.classList.add('tile-gray');
                 }
 
                 if (tile.name) {
@@ -444,23 +476,26 @@
                 
                 tileDiv.style.gridRow = `${tilePositions[index].row + 1}`;
                 tileDiv.style.gridColumn = `${tilePositions[index].col + 1}`;
-
                 board.appendChild(tileDiv);
             });
         }
 
-        function drawEventCard(player, pillar) {
-            const card = eventCards[pillar][Math.floor(Math.random() * eventCards[pillar].length)];
+        function drawEventCard(player) {
+            const allPillars = Object.keys(eventCards);
+            const randomPillar = allPillars[Math.floor(Math.random() * allPillars.length)];
+            const card = eventCards[randomPillar][Math.floor(Math.random() * eventCards[randomPillar].length)];
+            
+            addLogMessage(`${player.name} 抵達「六大支柱」，抽到一張 ${randomPillar} 事件卡。`);
+            
             let message = '';
             
             if (card.special === 'giveHP') {
-                showModal(`事件卡：${card.text}<br>你交到了新朋友！選擇一位玩家，為他增加 5 HP。`, () => {
+                showModal(`事件卡：${card.text}<br>你交到了新朋友！為他們增加 5 HP。`, () => {
                     const otherPlayers = players.filter(p => p !== player);
-                    const chosenPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)];
-                    if (chosenPlayer) {
-                        chosenPlayer.hp += 5;
+                    if (otherPlayers.length > 0) {
+                        otherPlayers.forEach(p => p.hp += 5);
                         updatePlayerStatus();
-                        showMessage(`${player.name} 為 ${chosenPlayer.name} 增加了 5 HP！`);
+                        addLogMessage(`${player.name} 的朋友們每人增加了 5 HP！`);
                     }
                     nextTurn();
                 });
@@ -522,22 +557,23 @@
         }
 
         function updateTokenPosition(player) {
-            const tile = document.querySelector(`.tile[data-index='${player.position}']`);
-            if (!tile) return;
-            const tileRect = tile.getBoundingClientRect();
-            const boardRect = board.getBoundingClientRect();
+            const currentTile = document.querySelector(`.tile[data-index='${player.position}']`);
+            if (!currentTile) return;
+
+            const tileRect = currentTile.getBoundingClientRect();
+            const containerRect = playerTokensContainer.getBoundingClientRect();
+            
+            const playersAtTile = players.filter(p => p.position === player.position);
+            const playerIndexAtTile = playersAtTile.indexOf(player);
+            
+            const offsetMultiplier = (playersAtTile.length > 1) ? (playerIndexAtTile - (playersAtTile.length - 1) / 2) : 0;
+            const xOffset = offsetMultiplier * 20;
 
             const tokenWidth = player.tokenElement.offsetWidth;
             const tokenHeight = player.tokenElement.offsetHeight;
             
-            const numPlayersAtTile = players.filter(p => p.position === player.position).length;
-            const playerIndexAtTile = players.filter(p => p.position === player.position).indexOf(player);
-
-            const offsetStep = 8;
-            const xOffset = playerIndexAtTile * offsetStep - (numPlayersAtTile - 1) * offsetStep / 2;
-            
-            const x = tileRect.left - boardRect.left + (tileRect.width / 2) - (tokenWidth / 2) + xOffset;
-            const y = tileRect.top - boardRect.top + (tileRect.height / 2) - (tokenHeight / 2);
+            const x = tileRect.left - containerRect.left + (tileRect.width / 2) - (tokenWidth / 2) + xOffset;
+            const y = tileRect.top - containerRect.top + (tileRect.height / 2) - (tokenHeight / 2);
 
             player.tokenElement.style.transform = `translate(${x}px, ${y}px)`;
         }
@@ -555,7 +591,10 @@
                     div.classList.add('current-turn');
                 }
                 div.innerHTML = `
-                    <span class="font-bold">${player.name}</span>
+                    <div style="display:flex; align-items:center;">
+                        <div class="player-color-box" style="background-color: ${playerColors[player.id]};"></div>
+                        <span class="font-bold">${player.name}</span>
+                    </div>
                     <span>HP: <span class="text-red-600 font-bold">${player.hp}</span></span>
                 `;
                 playerStatus.appendChild(div);
@@ -618,33 +657,52 @@
 
                 if (currentPlayer.skipTurn) {
                     showMessage(`${currentPlayer.name} 這次行動被跳過！`);
+                    addLogMessage(`${currentPlayer.name} 這次行動被跳過！`);
                     currentPlayer.skipTurn = false;
                     nextTurn();
                     rollDiceBtn.disabled = false;
                     return;
                 }
+                
+                let stepsMoved = 0;
+                const moveInterval = setInterval(() => {
+                    if (stepsMoved < roll) {
+                        const currentPathIndex = pathIndices.indexOf(currentPlayer.position);
+                        const nextPathIndex = (currentPathIndex + 1) % pathIndices.length;
+                        currentPlayer.position = pathIndices[nextPathIndex];
+                        updateTokenPosition(currentPlayer);
+                        stepsMoved++;
+                    } else {
+                        clearInterval(moveInterval);
+                        
+                        gameTurns++;
+                        
+                        let tileEffectMessage = '';
+                        const landedTile = tilesData[currentPlayer.position];
+                        addLogMessage(`${currentPlayer.name} 擲出了 ${roll} 點，抵達「${landedTile.name}」`);
+                        
+                        if (landedTile.name === '環習慣繞路') {
+                            const newPosition = 12;
+                            addLogMessage(`${currentPlayer.name} 陷入「環習慣繞路」，直接進入「不健康陷阱」！`);
+                            currentPlayer.position = newPosition;
+                            updateTokenPosition(currentPlayer);
+                            currentPlayer.skipTurn = true;
+                            tileEffectMessage = '你失去下一次行動！';
+                        } else if (landedTile.name === '規律運動') {
+                            const exerciseRoll = Math.floor(Math.random() * 2) === 0 ? 10 : -5;
+                            currentPlayer.hp += exerciseRoll;
+                            updatePlayerStatus();
+                            tileEffectMessage = `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${exerciseRoll} HP！`;
+                        } else if (landedTile.effect) {
+                            tileEffectMessage = landedTile.effect(currentPlayer);
+                        }
+                        
+                        addLogMessage(tileEffectMessage);
 
-                gameTurns++;
-                const oldPosition = currentPlayer.position;
-                const newPosition = (oldPosition + roll) % tilesData.length;
-                
-                currentPlayer.position = newPosition;
-                updateTokenPosition(currentPlayer);
-                
-                let tileEffectMessage = '';
-                const landedTile = tilesData[newPosition];
-                if (landedTile.effect) {
-                    tileEffectMessage = landedTile.effect(currentPlayer);
-                }
-                
-                setTimeout(() => {
-                    showModal(`
-                        <p class="dice-result">${currentPlayer.name} 擲出了 ${roll}！</p>
-                        <p class="text-lg mt-2">抵達「${landedTile.name}」</p>
-                        <p class="text-md font-bold mt-2">${tileEffectMessage}</p>
-                    `);
-                    updateAllTokenPositions();
-                }, 1000);
+                        nextTurn();
+                        rollDiceBtn.disabled = false;
+                    }
+                }, 200);
 
             }, 1000);
         });
