@@ -1,713 +1,549 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生活醫學大富翁</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #166534;
-            flex-direction: column;
-            overflow-y: auto;
-            padding: 2rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            touch-action: manipulation; /* 禁用雙擊縮放 */
         }
-
-        .main-game-area {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 2rem;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .board-container {
-            position: relative;
-            width: 80vmin;
-            height: 80vmin;
-            max-width: 800px;
-            max-height: 800px;
-        }
-
         .board {
-            width: 100%;
-            height: 100%;
-            position: relative;
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            grid-template-rows: repeat(7, 1fr);
-            border: 4px solid #166534;
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            background-color: #d1fae5;
+            grid-template-columns: 100px repeat(5, 1fr) 100px;
+            grid-template-rows: 100px repeat(5, 1fr) 100px;
+            gap: 4px;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1/1;
         }
-
-        .tile {
+        .cell {
+            border: 2px solid #333;
+            border-radius: 8px;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            border: 1px solid #166534;
-            background-color: #dcfce7;
-            padding: 0.5rem;
-            font-size: 0.7rem;
-            position: relative;
+            padding: 2px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
-        
-        /* 根據圖片中的顏色定義新的 Tile 類別 */
-        .tile-corner { background-color: #bbf7d0; }
-        .tile-gray { background-color: #d1d5db; }
-        .tile-yellow { background-color: #fef08a; }
-        .tile-purple { background-color: #a78bfa; }
-        
-        .tile-start {
-            background-color: #34d399;
-            color: white;
-            font-size: 0.9rem;
-        }
-        
-        .tile-title {
-            font-weight: bold;
-            font-size: 0.8rem;
-            margin-bottom: 0.25rem;
+        /* 定位棋盤格子 */
+        .cell-0 { grid-column: 1 / 2; grid-row: 7 / 8; }
+        .cell-1 { grid-column: 1 / 2; grid-row: 6 / 7; }
+        .cell-2 { grid-column: 1 / 2; grid-row: 5 / 6; }
+        .cell-3 { grid-column: 1 / 2; grid-row: 4 / 5; }
+        .cell-4 { grid-column: 1 / 2; grid-row: 3 / 4; }
+        .cell-5 { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .cell-6 { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .cell-7 { grid-column: 2 / 3; grid-row: 1 / 2; }
+        .cell-8 { grid-column: 3 / 4; grid-row: 1 / 2; }
+        .cell-9 { grid-column: 4 / 5; grid-row: 1 / 2; }
+        .cell-10 { grid-column: 5 / 6; grid-row: 1 / 2; }
+        .cell-11 { grid-column: 6 / 7; grid-row: 1 / 2; }
+        .cell-12 { grid-column: 7 / 8; grid-row: 1 / 2; }
+        .cell-13 { grid-column: 7 / 8; grid-row: 2 / 3; }
+        .cell-14 { grid-column: 7 / 8; grid-row: 3 / 4; }
+        .cell-15 { grid-column: 7 / 8; grid-row: 4 / 5; }
+        .cell-16 { grid-column: 7 / 8; grid-row: 5 / 6; }
+        .cell-17 { grid-column: 7 / 8; grid-row: 6 / 7; }
+        .cell-18 { grid-column: 7 / 8; grid-row: 7 / 8; }
+        .cell-19 { grid-column: 6 / 7; grid-row: 7 / 8; }
+        .cell-20 { grid-column: 5 / 6; grid-row: 7 / 8; }
+        .cell-21 { grid-column: 4 / 5; grid-row: 7 / 8; }
+        .cell-22 { grid-column: 3 / 4; grid-row: 7 / 8; }
+        .cell-23 { grid-column: 2 / 3; grid-row: 7 / 8; }
+        .center-panel {
+            grid-column: 2 / 7;
+            grid-row: 2 / 7;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
         }
 
-        .player-token {
+        .player-piece {
             position: absolute;
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            transition: transform 0.5s ease-in-out;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 10;
         }
 
-        .side-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-            align-items: flex-end; /* 靠右對齊 */
-            min-width: 320px;
-            max-width: 420px;
-            width: 100%;
-        }
+        /* 顏色主題 */
+        .corner { background-color: #a3a3a3; color: white; }
+        .property { background-color: #bae6fd; }
+        .event { background-color: #fef08a; }
+        .special { background-color: #d8b4fe; }
+        .negative_event { background-color: #fca5a5; }
 
-        .dice-container {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            flex-direction: column;
-        }
-
-        .dice-button {
-            background-color: #16a34a;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            font-size: 1.25rem;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border: none;
-        }
-
-        .dice-button:hover {
-            background-color: #15803d;
-        }
-
-        .dice-button:active {
-            transform: scale(0.95);
-        }
-
-        .dice {
-            width: 50px;
-            height: 50px;
-            background-color: #ffffff;
-            border: 2px solid #166534;
-            border-radius: 0.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2rem;
-            font-weight: bold;
-            margin-top: 1rem;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .dice.rolling {
-            animation: roll 0.5s infinite;
-        }
-
-        @keyframes roll {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .info-panel {
-            background-color: #ecfdf5;
-            border: 2px solid #34d399;
-            border-radius: 1rem;
-            padding: 1rem;
-            width: 100%;
-        }
-
-        .player-info-block {
-            background-color: #fff;
-            border-radius: 1rem;
-            border: 2px solid #a7f3d0;
-            margin-bottom: 1.5rem;
-            padding: 0.7rem 1rem 1rem 1rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
-        .player-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-        }
-
-        .player-info.current-turn {
-            background-color: #a7f3d0;
-            font-weight: bold;
-            border-radius: 0.5rem;
-        }
-
-        .player-color-box {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            border: 1px solid white;
-            margin-right: 8px;
-            display: inline-block;
-        }
-
-        .player-log {
-            background-color: #f0fdf4;
-            border: 1px solid #34d399;
-            border-radius: 0.5rem;
-            margin-top: 0.5rem;
-            padding: 0.5rem 0.7rem;
-            font-size: 0.93rem;
-            min-height: 40px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
+        /* 遊戲結束彈窗 */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-        }
-
-        .modal-content {
-            background-color: #f0fdf4;
-            padding: 2rem;
-            border-radius: 1rem;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .message-box {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            background-color: #dcfce7;
-            border: 2px solid #34d399;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 100;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.5s ease-out;
-            min-width: 250px;
-        }
-        .message-box.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .dice-result {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #166534;
-            margin-bottom: 1rem;
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
-<body>
-    <div id="setup-modal" class="modal" style="display:flex;">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4">遊戲設定</h2>
-            <p class="mb-4">選擇玩家人數 (2-4人)</p>
-            <div class="flex justify-center space-x-4 mb-6">
-                <button class="player-select-btn bg-green-500 text-white rounded-full w-12 h-12 flex items-center justify-center" data-players="2">2</button>
-                <button class="player-select-btn bg-green-500 text-white rounded-full w-12 h-12 flex items-center justify-center" data-players="3">3</button>
-                <button class="player-select-btn bg-green-500 text-white rounded-full w-12 h-12 flex items-center justify-center" data-players="4">4</button>
-            </div>
-            <button id="start-game-btn" class="bg-green-700 text-white font-bold py-2 px-6 rounded-full transition-all hover:bg-green-800">開始遊戲</button>
-        </div>
-    </div>
-    
-    <div id="game-modal" class="modal">
-        <div class="modal-content">
-            <div id="modal-content"></div>
-            <button id="close-modal-btn" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-full hover:bg-green-700 transition-colors">確認</button>
-        </div>
-    </div>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
-    <h1 class="text-4xl font-extrabold mb-8 text-green-800">生活醫學大富翁</h1>
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">🎲 生活醫學大富翁 🎲</h1>
+
+    <div id="gameContainer" class="w-full max-w-4xl mx-auto flex flex-col lg:flex-row gap-6">
         
-    <div class="main-game-area">
-        <div class="board-container">
-            <div class="board" id="board">
-                <!-- Tiles will be dynamically created here -->
+        <!-- 左側遊戲資訊 -->
+        <div class="lg:w-1/4 bg-white p-6 rounded-2xl shadow-lg order-2 lg:order-1">
+            <h2 class="text-2xl font-bold mb-4 border-b pb-2">玩家狀態</h2>
+            <div class="space-y-4 text-center">
+                <div>
+                    <p class="text-lg font-semibold">原廠健康設定(HP)</p>
+                    <p id="playerHP" class="text-4xl font-bold text-green-500">100</p>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold">目前回合:</p>
+                    <p id="currentRound" class="text-4xl font-bold text-blue-500">0 / 10</p>
+                </div>
+                <div class="h-24 flex flex-col justify-center">
+                    <p class="text-lg font-semibold">擲骰點數:</p>
+                    <p id="diceResult" class="text-6xl font-bold text-red-500">-</p>
+                </div>
             </div>
-            <div id="player-tokens-container"></div>
+            <button id="rollDiceBtn" class="mt-8 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-all text-xl shadow-md active:scale-95">
+                擲骰子 🎲
+            </button>
+            <!-- 新增：手動調整HP -->
+            <div class="mt-4 pt-4 border-t">
+                 <p class="text-lg font-semibold text-center mb-2">手動調整HP</p>
+                 <div class="flex gap-2">
+                     <input type="number" id="manualAddHpInput" class="w-full border-2 border-gray-300 rounded-lg p-2 text-center" placeholder="輸入增減值">
+                     <button id="manualAddHpBtn" class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 active:scale-95">確認</button>
+                 </div>
+            </div>
         </div>
 
-        <div class="side-panel">
-            <div class="dice-container">
-                <button id="roll-dice-btn" class="dice-button">擲骰子</button>
-                <div id="dice-display" class="dice">?</div>
-            </div>
-
-            <div id="game-info" class="info-panel">
-                <h3 class="font-bold text-xl mb-2">玩家資訊</h3>
-                <div id="player-status"></div>
-                <p id="current-player-turn" class="mt-4 text-lg font-bold">目前玩家：<span id="player-name"></span></p>
+        <!-- 右側遊戲棋盤 -->
+        <div class="flex-1 order-1 lg:order-2">
+            <div id="board" class="board mx-auto bg-white p-2 rounded-2xl shadow-lg">
+                <!-- 棋盤格子將由 JS 動態生成 -->
+                 <div class="center-panel bg-gray-200 rounded-lg">
+                    <h3 class="text-xl md:text-2xl font-bold mb-2 text-center">事件紀錄</h3>
+                    <div id="messageLog" class="w-full h-full bg-white rounded-lg p-4 text-sm md:text-base overflow-y-auto">
+                        歡迎來到生活醫學大富翁！
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="message-box" class="message-box"></div>
+    <!-- 遊戲結束彈窗 -->
+    <div id="gameOverModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden opacity-0 modal">
+        <div class="bg-white rounded-2xl p-8 text-center shadow-2xl transform scale-95 transition-transform">
+            <h2 id="modalTitle" class="text-4xl font-bold mb-4">遊戲結束！</h2>
+            <p id="modalMessage" class="text-xl mb-6">你的最終健康點數為：</p>
+            <p id="finalScore" class="text-8xl font-bold text-green-500 mb-8">100</p>
+            <button onclick="location.reload()" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-all text-xl shadow-md">
+                重新開始
+            </button>
+        </div>
+    </div>
+
 
     <script>
-        const board = document.getElementById('board');
-        const rollDiceBtn = document.getElementById('roll-dice-btn');
-        const diceDisplay = document.getElementById('dice-display');
-        const playerTokensContainer = document.getElementById('player-tokens-container');
-        const playerStatus = document.getElementById('player-status');
-        const playerNameDisplay = document.getElementById('player-name');
-        const messageBox = document.getElementById('message-box');
-        const setupModal = document.getElementById('setup-modal');
-        const startGameBtn = document.getElementById('start-game-btn');
-        const playerSelectBtns = document.querySelectorAll('.player-select-btn');
-        const gameModal = document.getElementById('game-modal');
-        const modalContent = document.getElementById('modal-content');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        
-        let players = [];
-        let currentPlayerIndex = 0;
-        let gameStarted = false;
-        let numPlayers = 2;
-        let gameTurns = 0;
-        const totalTurns = 20;
+        // --- 遊戲設定 ---
+        const TOTAL_ROUNDS = 10;
+        const STARTING_HP = 100;
+        const PASS_START_HP = 300;
 
-        const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981'];
-        
-        const pathIndices = [
-            0, 1, 2, 3, 4, 5, 6,
-            23, 22, 21, 20, 19,
-            18, 17, 16, 15, 14, 13, 12,
-            11, 10, 9, 8, 7
+        // --- 遊戲棋盤資料 (HP調整) ---
+        const boardData = [
+            { name: '健康出發', type: 'corner' },
+            { name: '走路/搭車<br><small>去補習班</small>', type: 'property', cost: 150, question: '你有沒有想過，每天通車/走路上下學，其實也是一種運動？' },
+            { name: '宵夜吃泡麵', type: 'negative_event', hp: -300, pillar: '營養', impact: '高鈉高油，容易造成水腫和體重增加。', question: '宵夜是你生活的一部分嗎？通常都吃些什麼？' },
+            { name: '健康飲食<br><small>便利商店沙拉</small>', type: 'property', cost: 150, question: '昨天有吃到蔬菜水果嗎？還是都靠外食解決？' },
+            { name: '規律運動', type: 'special' },
+            { name: '無菸公園', type: 'property', cost: 150, question: '如果朋友在旁邊吸菸（包含電子菸），你會怎麼做？' },
+            { name: '不健康陷阱', type: 'corner' },
+            { name: '週末宅在家耍廢', type: 'negative_event', hp: -300, pillar: '運動', impact: '久坐不動會導致肌肉僵硬、新陳代謝變慢。', question: '週末除了滑手機，你還會做些什麼事讓自己充電？' },
+            { name: '獨處時間<br><small>聽音樂/看書</small>', type: 'property', cost: 150, question: '當你覺得煩躁的時候，會做什麼事讓自己冷靜下來？' },
+            { name: '六大支柱', type: 'event' },
+            { name: '和家人吃飯', type: 'property', cost: 150, question: '你多久和家人一起坐下來好好吃頓飯？' },
+            { name: '熬夜打Game/追劇', type: 'negative_event', hp: -400, pillar: '睡眠', impact: '睡眠不足會影響隔日的專注力和記憶力。', question: '你是不是也覺得，晚上才是自己的自由時間？' },
+            { name: '自我照顧日', type: 'corner' },
+            { name: '參加社團', type: 'property', cost: 150, question: '參加社團活動讓你學到了什麼？' },
+            { name: '報告拖到死線前', type: 'negative_event', hp: -300, pillar: '壓力管理', impact: '最後一刻的壓力會導致焦慮和睡眠品質下降。', question: '你是不是也常常覺得「等一下再做」，然後就沒有然後了？' },
+            { name: '規律運動', type: 'special' },
+            { name: '早睡早起', type: 'property', cost: 150, question: '你覺得早睡早起對你一天的精神有什麼影響？' },
+            { name: '六大支柱', type: 'event' },
+            { name: '壞習慣繞路', type: 'corner' },
+            { name: '跟網友/朋友吵架', type: 'negative_event', hp: -300, pillar: '社交連結', impact: '負面情緒會影響人際關係和心理健康。', question: '當你跟朋友意見不合時，你會怎麼處理？' },
+            { name: '六大支柱', type: 'event' },
+            { name: '喝全糖珍珠奶茶', type: 'negative_event', hp: -300, pillar: '營養', impact: '高糖和高熱量，容易導致體重增加和血糖不穩。', question: '你平均一個禮拜喝幾杯手搖飲？' },
+            { name: '六大支柱', type: 'event' },
+            { name: '關心身體', type: 'property', cost: 150, question: '除了身高體重，你上次關心自己的健康狀況是什麼時候？' }
         ];
 
-        const tilesData = [
-            { name: '健康出發', text: '', color: 'gray', effect: (player) => { player.hp += 20; return `經過「健康出發」，獲得 20 HP！`; } },
-            { name: '健康檢查', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「健康檢查」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '拒絕菸酒', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「拒絕菸酒」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '深呼吸', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「深呼吸」，獲得 5 HP！`; } },
-            { name: '環習慣繞路', text: '進監獄', color: 'gray', effect: (player) => { player.position = 12; player.skipTurn = true; return '走到「環習慣繞路」，直接進入「不健康陷阱」，失去下一回合！'; } },
-            { name: '舞蹈教室', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「舞蹈教室」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '水果蔬菜市場', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「水果蔬菜市場」，獲得 5 HP！`; } },
-            { name: '規律運動', text: '', color: 'purple', effect: (player) => {
-                 const roll = Math.floor(Math.random() * 2) === 0;
-                 const hpChange = roll ? 10 : -5;
-                 player.hp += hpChange;
-                 updatePlayerStatus();
-                 return `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${hpChange} HP！`; 
-            } },
-            { name: '無菸公園', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「無菸公園」，獲得 5 HP！`; } },
-            { name: '不健康陷阱', text: '失去一回合', color: 'gray', effect: (player) => { player.skipTurn = true; return '進入「不健康陷阱」，失去下一次行動！'; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '冥想空間', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「冥想空間」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '家庭晚餐', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「家庭晚餐」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '自我照顧日', text: '+15 HP', color: 'gray', effect: (player) => { player.hp += 15; return `享受「自我照顧日」，獲得 15 HP！`; } },
-            { name: '參加社團', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「參加社團」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
-            { name: '規律運動', text: '', color: 'purple', effect: (player) => {
-                 const roll = Math.floor(Math.random() * 2) === 0;
-                 const hpChange = roll ? 10 : -5;
-                 player.hp += hpChange;
-                 updatePlayerStatus();
-                 return `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${hpChange} HP！`; 
-            } },
-            { name: '早晨早起', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「早晨早起」，獲得 5 HP！`; } },
-            { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) }
-        ];
-        
-        const tilePositions = [
-            { row: 6, col: 0 }, { row: 6, col: 1 }, { row: 6, col: 2 }, { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 },
-            { row: 5, col: 0 }, { row: 4, col: 0 }, { row: 3, col: 0 }, { row: 2, col: 0 }, { row: 1, col: 0 },
-            { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 }, { row: 0, col: 5 }, { row: 0, col: 6 },
-            { row: 1, col: 6 }, { row: 2, col: 6 }, { row: 3, col: 6 }, { row: 4, col: 6 }, { row: 5, col: 6 }
-        ];
-
+        // --- 六大支柱事件卡 (HP調整) ---
         const eventCards = {
             '營養': [
-                { text: '早餐吃燕麥＋水果', hpChange: 10 },
-                { text: '午餐速食漢堡＋炸薯條', hpChange: -15 },
+                { text: '早餐有好好吃，而不是隨便嗑個麵包就衝出門。', hp: 300, question: '你今天早餐吃了什麼？還是直接餓到中午？' },
+                { text: '午餐吃雞排配珍奶，超爽但也好油...', hp: -300, question: '你昨天有吃到蔬菜水果嗎？' },
+                { text: '宵夜吃泡麵加雞排，隔天水腫又疲勞。', hp: -300, question: '宵夜是你生活的一部分嗎？通常都吃些什麼？' },
+                { text: '把含糖飲料當水喝，精神不濟。', hp: -300, question: '你昨天喝了幾杯含糖飲料？' }
             ],
             '運動': [
-                { text: '參加公益路跑', hpChange: 10 },
-                { text: '放學坐車不走路', hpChange: -5 },
+                { text: '體育課難得選到喜歡的項目，有好好動一動！', hp: 300, question: '你最討厭/最喜歡的體育課項目是什麼？' },
+                { text: '明明捷運站只差一站，還是懶得走路。', hp: -200, question: '你平均一天走路幾步呢？' },
+                { text: '週末整天待在房間打傳說，脖子超僵硬。', hp: -300, question: '你週末是「出門派」還是「在家派」？' }
             ],
             '睡眠': [
-                { text: '11 點前上床睡覺', hpChange: 10 },
-                { text: '滑手機到凌晨三點', hpChange: -20 },
+                { text: '晚上12點前就寢，沒有報復性熬夜！', hp: 400, question: '你通常都幾點睡覺？' },
+                { text: '睡前關燈還在刷IG/TikTok，結果一看就停不下來...', hp: -400, question: '你睡前會滑手機嗎？會滑多久？' },
+                { text: '為了追劇而通宵，上課都在打瞌睡。', hp: -400, question: '你覺得自己每天的睡眠時間足夠嗎？' }
             ],
             '壓力管理': [
-                { text: '10 分鐘深呼吸靜坐', hpChange: 10 },
-                { text: '考前緊張失眠', hpChange: -10 },
+                { text: '戴上耳機聽喜歡的歌，暫時把煩惱都忘掉。', hp: 300, question: '你感覺到壓力大時，通常會怎麼做？' },
+                { text: '段考前一天才開始抱佛腳，壓力山大。', hp: -300, question: '最近有什麼事情讓你感到壓力最大？' },
+                { text: '看到朋友的IG限動都是出去玩，會不會讓你覺得有點焦慮？', hp: -300, question: '你每天花多少時間在社群媒體上？' },
+                { text: '作業拖到最後一刻才寫，壓力爆表。', hp: -300, question: '你有拖延的習慣嗎？通常是什麼情況下？' },
+                { text: '為了升學考試，每天補習到深夜，身心俱疲。', hp: -300, question: '你如何平衡課業、社團活動和休息時間呢？' }
             ],
             '社交連結': [
-                { text: '參加社團交到新朋友', hpChange: 10, special: 'giveHP' },
-                { text: '線上遊戲玩到凌晨兩點', hpChange: -10, special: 'allPlayers' },
+                { text: '在社團/活動中認識了興趣相投的新朋友！', hp: 300, question: '你最近有認識新朋友嗎？' },
+                { text: '跟網友打了一整晚的Game，但好像很久沒跟現實的朋友見面了...', hp: -300, question: '你比較喜歡線上聊天還是跟朋友見面？' },
+                { text: '在Dcard或Meteor上跟人筆戰，超氣！', hp: -300, question: '當你跟朋友意見不合時，你會怎麼處理？' }
             ],
-            '高風險物質': [
-                { text: '拒絕喝酒邀約', hpChange: 10 },
-                { text: '同儕要你抽電子菸', hpChange: null, special: 'diceRoll' },
+            '避免高風險物質': [
+                { text: '朋友揪你去夜唱喝酒，你禮貌拒絕了！', hp: 500, question: '如果朋友邀請你嘗試沒接觸過的東西，你會怎麼回應？' },
+                { text: '同儕慫恿你抽電子菸...', special: 'e-cig', question: '你對電子菸有什麼樣的看法？' },
+                { text: '為了熬夜讀書，灌了好幾罐能量飲料。', hp: -300, question: '你覺得疲勞的時候，除了喝提神飲料，還有什麼好方法？' }
             ]
         };
 
-        // 為每位玩家記錄個人事件
-        function addLogMessage(msg, playerId) {
-            const logPanel = document.getElementById(`player-log-${playerId}`);
-            if (!logPanel) return;
-            const p = document.createElement('p');
-            p.classList.add('log-message');
-            p.textContent = msg;
-            logPanel.prepend(p);
-        }
+        // --- 遊戲狀態 ---
+        let player = {
+            position: 0,
+            hp: STARTING_HP,
+            skipTurns: 0
+        };
+        let currentRound = 0;
+        let gameInProgress = true;
+        let rollCount = 0;
+        let pillarsEncounteredThisCycle = new Set(); 
 
-        function showMessage(msg) {
-            messageBox.textContent = msg;
-            messageBox.classList.add('show');
-            setTimeout(() => {
-                messageBox.classList.remove('show');
-            }, 3000);
-        }
-
-        function createBoard() {
-            board.innerHTML = '';
-            for(let i=0; i<49; i++) {
-                const emptyTile = document.createElement('div');
-                emptyTile.style.backgroundColor = '#ecfdf5';
-                board.appendChild(emptyTile);
-            }
-            // 不再建立中央事件記錄
-            tilesData.forEach((tile, index) => {
-                const tileDiv = document.createElement('div');
-                tileDiv.classList.add('tile');
-                tileDiv.dataset.index = index;
-                if (tile.color === 'start') {
-                    tileDiv.classList.add('tile-start', 'font-bold');
-                } else if (tile.color === 'gray') {
-                    tileDiv.classList.add('tile-gray', 'font-bold');
-                } else if (tile.color === 'yellow') {
-                    tileDiv.classList.add('tile-yellow');
-                } else if (tile.color === 'purple') {
-                    tileDiv.classList.add('tile-purple');
-                } else {
-                    tileDiv.classList.add('tile-gray');
+        // --- DOM 元素 ---
+        const boardElement = document.getElementById('board');
+        const playerHPElement = document.getElementById('playerHP');
+        const currentRoundElement = document.getElementById('currentRound');
+        const diceResultElement = document.getElementById('diceResult');
+        const rollDiceBtn = document.getElementById('rollDiceBtn');
+        const messageLog = document.getElementById('messageLog');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const finalScoreElement = document.getElementById('finalScore');
+        const manualAddHpInput = document.getElementById('manualAddHpInput'); // 新增
+        const manualAddHpBtn = document.getElementById('manualAddHpBtn'); // 新增
+        
+        // --- 遊戲初始化 ---
+        function initializeGame() {
+            boardData.forEach((cellData, index) => {
+                const cell = document.createElement('div');
+                cell.className = `cell cell-${index} ${cellData.type}`;
+                cell.innerHTML = `<span>${cellData.name}</span>`;
+                if(cellData.type === 'property') {
+                     cell.innerHTML += `<span class="font-bold text-green-600">+${cellData.cost} HP</span>`;
                 }
-                if (tile.name) {
-                    const nameSpan = document.createElement('span');
-                    nameSpan.classList.add('tile-title');
-                    nameSpan.textContent = tile.name;
-                    tileDiv.appendChild(nameSpan);
+                if(cellData.type === 'negative_event') {
+                    cell.innerHTML += `<span class="font-bold text-red-600">${cellData.hp} HP</span>`;
                 }
-                if (tile.text) {
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = tile.text;
-                    tileDiv.appendChild(textSpan);
-                }
-                tileDiv.style.gridRow = `${tilePositions[index].row + 1}`;
-                tileDiv.style.gridColumn = `${tilePositions[index].col + 1}`;
-                board.appendChild(tileDiv);
+                boardElement.insertBefore(cell, boardElement.firstChild);
             });
+            
+            const playerPiece = document.createElement('div');
+            playerPiece.id = 'playerPiece';
+            playerPiece.className = 'player-piece bg-blue-500';
+            boardElement.querySelector('.cell-0').appendChild(playerPiece);
+
+            updateUI();
         }
 
-        function drawEventCard(player) {
-            const allPillars = Object.keys(eventCards);
-            const randomPillar = allPillars[Math.floor(Math.random() * allPillars.length)];
-            const card = eventCards[randomPillar][Math.floor(Math.random() * eventCards[randomPillar].length)];
-            addLogMessage(`抽到 ${randomPillar} 事件卡：${card.text}`, player.id);
-            if (card.special === 'giveHP') {
-                showModal(`事件卡：${card.text}<br>你交到了新朋友！為他們增加 5 HP。`, () => {
-                    const otherPlayers = players.filter(p => p !== player);
-                    if (otherPlayers.length > 0) {
-                        otherPlayers.forEach(p => { 
-                            p.hp += 5;
-                            addLogMessage(`${player.name} 的朋友們每人增加了 5 HP！`, p.id);
-                        });
-                        updatePlayerStatus();
-                    }
-                    nextTurn();
-                });
-                return `觸發事件「${card.text}」！`;
-            } else if (card.special === 'allPlayers') {
-                player.hp += card.hpChange;
-                players.forEach(p => {
-                    if (p !== player) {
-                        p.hp += card.hpChange;
-                        addLogMessage(`大家一起受到影響 HP${card.hpChange > 0 ? '+' : ''}${card.hpChange}！`, p.id);
-                    }
-                });
-                updatePlayerStatus();
-                return `觸發事件「${card.text}」，大家一起 ${card.hpChange > 0 ? '+' : ''}${card.hpChange} HP！`;
-            } else if (card.special === 'diceRoll') {
-                const roll = Math.floor(Math.random() * 6) + 1;
-                let hpChange = 0;
-                let rollText = '';
-                if (roll % 2 === 0) {
-                    hpChange = 10;
-                    rollText = '偶數！拒絕誘惑，獲得 10 HP！';
-                } else {
-                    hpChange = -25;
-                    rollText = '奇數！不慎嘗試，失去 25 HP！';
-                }
-                player.hp += hpChange;
-                updatePlayerStatus();
-                return `觸發事件「${card.text}」！你擲出 ${roll}，${rollText}`;
-            } else {
-                player.hp += card.hpChange;
-                updatePlayerStatus();
-                return `觸發事件「${card.text}」，HP 變化：${card.hpChange > 0 ? '+' : ''}${card.hpChange}！`;
+        // --- UI 更新函式 ---
+        function updateUI() {
+            playerHPElement.textContent = player.hp;
+            currentRoundElement.textContent = `${currentRound} / ${TOTAL_ROUNDS}`;
+
+            const playerPiece = document.getElementById('playerPiece');
+            const targetCell = boardElement.querySelector(`.cell-${player.position}`);
+            if (playerPiece && targetCell) {
+                 targetCell.appendChild(playerPiece);
             }
-        }
-
-        function createPlayers() {
-            playerTokensContainer.innerHTML = '';
-            players = [];
-            playerStatus.innerHTML = '';
-            for (let i = 0; i < numPlayers; i++) {
-                const player = {
-                    id: i,
-                    name: `玩家 ${i + 1}`,
-                    hp: 100,
-                    position: 0,
-                    skipTurn: false,
-                    tokenElement: null
-                };
-                // token
-                const token = document.createElement('div');
-                token.classList.add('player-token');
-                token.style.backgroundColor = playerColors[i];
-                token.style.zIndex = 10 + i;
-                player.tokenElement = token;
-                playerTokensContainer.appendChild(token);
-                players.push(player);
-
-                // info block
-                const infoBlock = document.createElement('div');
-                infoBlock.className = 'player-info-block';
-                infoBlock.id = `player-info-block-${i}`;
-                // info row
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'player-info';
-                if (i === currentPlayerIndex) infoDiv.classList.add('current-turn');
-                infoDiv.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        <div class="player-color-box" style="background-color: ${playerColors[player.id]};"></div>
-                        <span class="font-bold">${player.name}</span>
-                    </div>
-                    <span>HP: <span class="text-red-600 font-bold" id="player-hp-${i}">${player.hp}</span></span>
-                `;
-                infoBlock.appendChild(infoDiv);
-
-                // log
-                const logDiv = document.createElement('div');
-                logDiv.className = 'player-log';
-                logDiv.id = `player-log-${i}`;
-                logDiv.innerHTML = `<p class="log-message">歡迎加入遊戲！</p>`;
-                infoBlock.appendChild(logDiv);
-
-                playerStatus.appendChild(infoBlock);
-            }
-            updateCurrentPlayerDisplay();
-            updateAllTokenPositions();
-        }
-
-        function updateTokenPosition(player) {
-            const currentTile = document.querySelector(`.tile[data-index='${player.position}']`);
-            if (!currentTile) return;
-            const tileRect = currentTile.getBoundingClientRect();
-            const containerRect = playerTokensContainer.getBoundingClientRect();
-            const playersAtTile = players.filter(p => p.position === player.position);
-            const playerIndexAtTile = playersAtTile.indexOf(player);
-            const offsetMultiplier = (playersAtTile.length > 1) ? (playerIndexAtTile - (playersAtTile.length - 1) / 2) : 0;
-            const xOffset = offsetMultiplier * 20;
-            const tokenWidth = player.tokenElement.offsetWidth;
-            const tokenHeight = player.tokenElement.offsetHeight;
-            const x = tileRect.left - containerRect.left + (tileRect.width / 2) - (tokenWidth / 2) + xOffset;
-            const y = tileRect.top - containerRect.top + (tileRect.height / 2) - (tokenHeight / 2);
-            player.tokenElement.style.transform = `translate(${x}px, ${y}px)`;
-        }
-
-        function updateAllTokenPositions() {
-            players.forEach(p => updateTokenPosition(p));
-        }
-
-        function updatePlayerStatus() {
-            players.forEach((player, i) => {
-                const hpSpan = document.getElementById(`player-hp-${i}`);
-                if (hpSpan) hpSpan.textContent = player.hp;
-                const infoRow = document.querySelector(`#player-info-block-${i} .player-info`);
-                if (infoRow) infoRow.classList.toggle('current-turn', i === currentPlayerIndex);
-            });
-        }
-
-        function updateCurrentPlayerDisplay() {
-            playerNameDisplay.textContent = players[currentPlayerIndex].name;
-            updatePlayerStatus();
         }
         
-        function showModal(content, onConfirm) {
-            modalContent.innerHTML = content;
-            gameModal.style.display = 'flex';
-            rollDiceBtn.disabled = true;
-            closeModalBtn.onclick = () => {
-                gameModal.style.display = 'none';
-                rollDiceBtn.disabled = false;
-                if (onConfirm) onConfirm();
-            };
+        // --- 紀錄訊息 ---
+        function logMessage(message, color = 'text-gray-800') {
+            const p = document.createElement('p');
+            p.className = `${color} mb-1`;
+            p.innerHTML = message;
+            messageLog.appendChild(p);
+            messageLog.scrollTop = messageLog.scrollHeight;
         }
 
-        function checkWinCondition() {
-            if (gameTurns >= totalTurns) {
-                const winner = players.reduce((prev, current) => (prev.hp > current.hp) ? prev : current);
-                showModal(`
-                    <h2 class="text-3xl font-bold mb-4">遊戲結束！</h2>
-                    <p class="text-xl">總回合數：${totalTurns}</p>
-                    <p class="text-2xl font-bold mt-4">恭喜 ${winner.name} 成為「健康生活冠軍」！</p>
-                    <p class="text-lg mt-2">最終 HP: ${winner.hp}</p>
-                `);
-                rollDiceBtn.disabled = true;
-                return true;
-            }
-            return false;
-        }
-
-        function nextTurn() {
-            if (checkWinCondition()) return;
-            currentPlayerIndex = (currentPlayerIndex + 1) % numPlayers;
-            updateCurrentPlayerDisplay();
-        }
-
+        // --- 擲骰子事件 ---
         rollDiceBtn.addEventListener('click', () => {
-            if (!gameStarted) {
-                showMessage('請先設定遊戲並點擊「開始遊戲」！');
+            if (!gameInProgress) return;
+            
+            if (player.skipTurns > 0) {
+                logMessage(`你在<b class="text-red-600">不健康陷阱</b>中，跳過這回合。 (剩下 ${player.skipTurns - 1} 回合)`, 'text-red-700');
+                player.skipTurns--;
+                endTurn();
                 return;
             }
+
+            rollCount++;
             rollDiceBtn.disabled = true;
-            diceDisplay.textContent = '?';
-            diceDisplay.classList.add('rolling');
+            rollDiceBtn.textContent = '移動中...';
+            diceResultElement.textContent = '...';
+            
             setTimeout(() => {
-                const roll = Math.floor(Math.random() * 6) + 1;
-                diceDisplay.textContent = roll;
-                diceDisplay.classList.remove('rolling');
-                const currentPlayer = players[currentPlayerIndex];
-                if (currentPlayer.skipTurn) {
-                    showMessage(`${currentPlayer.name} 這次行動被跳過！`);
-                    addLogMessage(`這次行動被跳過！`, currentPlayer.id);
-                    currentPlayer.skipTurn = false;
-                    nextTurn();
-                    rollDiceBtn.disabled = false;
-                    return;
-                }
-                let stepsMoved = 0;
-                const moveInterval = setInterval(() => {
-                    if (stepsMoved < roll) {
-                        const currentPathIndex = pathIndices.indexOf(currentPlayer.position);
-                        const nextPathIndex = (currentPathIndex + 1) % pathIndices.length;
-                        currentPlayer.position = pathIndices[nextPathIndex];
-                        updateTokenPosition(currentPlayer);
-                        stepsMoved++;
-                    } else {
-                        clearInterval(moveInterval);
-                        gameTurns++;
-                        const landedTile = tilesData[currentPlayer.position];
-                        addLogMessage(`擲出了 ${roll} 點，抵達「${landedTile.name}」`, currentPlayer.id);
-                        let tileEffectMessage = '';
-                        if (landedTile.name === '環習慣繞路') {
-                            currentPlayer.position = 12;
-                            updateTokenPosition(currentPlayer);
-                            currentPlayer.skipTurn = true;
-                            tileEffectMessage = '你失去下一次行動！';
-                        } else if (landedTile.name === '規律運動') {
-                            const exerciseRoll = Math.floor(Math.random() * 2) === 0 ? 10 : -5;
-                            currentPlayer.hp += exerciseRoll;
-                            updatePlayerStatus();
-                            tileEffectMessage = `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${exerciseRoll} HP！`;
-                        } else if (landedTile.effect) {
-                            tileEffectMessage = landedTile.effect(currentPlayer);
-                        }
-                        addLogMessage(tileEffectMessage, currentPlayer.id);
-                        updatePlayerStatus();
-                        nextTurn();
-                        rollDiceBtn.disabled = false;
-                    }
-                }, 200);
-            }, 1000);
+                const diceRoll = Math.floor(Math.random() * 6) + 1;
+                diceResultElement.textContent = diceRoll;
+                logMessage(`你擲出了 <b class="text-red-500">${diceRoll}</b> 點！`);
+                movePlayer(diceRoll);
+            }, 500);
+        });
+
+        // --- 新增：手動加點事件 ---
+        manualAddHpBtn.addEventListener('click', () => {
+            const value = parseInt(manualAddHpInput.value, 10);
+            if (isNaN(value)) {
+                logMessage('請輸入有效的數字。', 'text-red-700');
+                return;
+            }
+            player.hp += value;
+            const actionText = value >= 0 ? '增加' : '減少';
+            const absValue = Math.abs(value);
+            logMessage(`手動${actionText}了 <b class="text-blue-600">${absValue}</b> HP。`, 'text-blue-700');
+            updateUI();
+            manualAddHpInput.value = '';
         });
         
-        playerSelectBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                playerSelectBtns.forEach(b => b.classList.remove('bg-green-700', 'border-4', 'border-green-900'));
-                btn.classList.add('bg-green-700', 'border-4', 'border-green-900');
-                numPlayers = parseInt(btn.dataset.players);
-            });
-        });
+        // --- 移動玩家 ---
+        async function movePlayer(steps) {
+            for (let i = 0; i < steps; i++) {
+                player.position = (player.position + 1) % boardData.length;
+                updateUI();
+                if (player.position === 0) {
+                    player.hp += PASS_START_HP;
+                    logMessage(`經過<b class="text-green-600">健康出發</b>點，獲得 ${PASS_START_HP} HP！`, 'text-green-700');
+                    updateUI();
+                }
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            handleLanding();
+        }
 
-        startGameBtn.addEventListener('click', () => {
-            setupModal.style.display = 'none';
-            gameStarted = true;
-            createPlayers();
-            showMessage('遊戲開始！玩家 1 先擲骰子');
-        });
+        // --- 處理玩家停留的格子 ---
+        function handleLanding() {
+            const currentCell = boardData[player.position];
+            logMessage(`你抵達了 <b class="text-blue-600">${currentCell.name}</b>。`);
 
-        createBoard();
-        window.addEventListener('resize', updateAllTokenPositions);
+            switch (currentCell.type) {
+                case 'property':
+                    player.hp += currentCell.cost;
+                    logMessage(`養成好習慣！獲得 ${currentCell.cost} HP。`, 'text-green-700');
+                    if (currentCell.question) {
+                        logMessage(`<b>【提問】</b>${currentCell.question}`, 'text-purple-600');
+                    }
+                    break;
+                case 'negative_event':
+                    player.hp += currentCell.hp;
+                    logMessage(`踩到壞習慣陷阱：「${currentCell.name}」。HP <b class="text-red-600">${currentCell.hp}</b>。`, 'text-red-700');
+                    logMessage(`<b>[${currentCell.pillar}]</b> ${currentCell.impact}`, 'text-gray-600');
+                    if (currentCell.question) {
+                        logMessage(`<b>【提問】</b>${currentCell.question}`, 'text-purple-600');
+                    }
+                    pillarsEncounteredThisCycle.add(currentCell.pillar);
+                    break;
+                case 'event':
+                    const forceNegative = rollCount % 3 === 0;
+                    triggerEvent(forceNegative);
+                    break;
+                case 'special':
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    logMessage(`進行規律運動...擲骰得到 <b class="text-red-500">${roll}</b>。`);
+                    if (roll % 2 === 0) {
+                        player.hp += 300;
+                        logMessage(`是偶數！運動讓你更有活力，+300 HP。`, 'text-green-700');
+                    } else {
+                        player.hp -= 200;
+                        logMessage(`是奇數...運動有點拉傷，-200 HP。`, 'text-yellow-700');
+                    }
+                    logMessage(`<b>【提問】</b>你上一次運動是什麼時候？`, 'text-purple-600');
+                    break;
+                case 'corner':
+                    handleCorner(currentCell.name);
+                    break;
+            }
+            
+            setTimeout(() => {
+                endTurn();
+            }, 1000);
+        }
 
+        // --- 處理角落格子 ---
+        function handleCorner(name) {
+             switch (name) {
+                case '自我照顧日':
+                    player.hp += 500;
+                    logMessage(`今天是自我照顧日！好好放鬆，+500 HP。`, 'text-purple-700');
+                    logMessage(`<b>【提問】</b>你通常如何放鬆自己、照顧自己的情緒呢？`, 'text-purple-600');
+                    break;
+                case '壞習慣繞路':
+                    logMessage(`你走了壞習慣的捷徑...直接前往<b class="text-red-600">不健康陷阱</b>！`, 'text-red-700');
+                    player.position = boardData.findIndex(cell => cell.name === '不健康陷阱');
+                    player.skipTurns = 2;
+                    logMessage(`你需要跳過 2 次行動。`);
+                    logMessage(`<b>【提問】</b>在生活中，有沒有什麼「壞習慣的捷徑」是你想要避開的？`, 'text-purple-600');
+                    updateUI();
+                    break;
+                case '不健康陷阱':
+                     logMessage('只是來看看，沒有受罰。');
+                     logMessage(`<b>【提問】</b>在現實生活中，你可以如何辨識並避開對健康有害的「陷阱」？`, 'text-purple-600');
+                    break;
+             }
+        }
+
+        // --- 觸發六大支柱事件 ---
+        function triggerEvent(forceNegative = false) {
+            if (forceNegative) {
+                logMessage(`<b>厄運降臨！</b>似乎是壞習慣找上門了...`, 'text-purple-700');
+            }
+            const pillars = Object.keys(eventCards);
+            const randomPillar = pillars[Math.floor(Math.random() * pillars.length)];
+            pillarsEncounteredThisCycle.add(randomPillar);
+            
+            let possibleEvents = eventCards[randomPillar];
+
+            if (forceNegative) {
+                const negativeEvents = possibleEvents.filter(event => event.hp < 0 || event.special);
+                if (negativeEvents.length > 0) {
+                    possibleEvents = negativeEvents;
+                }
+            }
+
+            const randomEvent = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+
+            logMessage(`觸發 <b class="text-yellow-600">${randomPillar}</b> 事件！`);
+            logMessage(`說明：${randomEvent.text}`);
+
+            if (randomEvent.hp) {
+                player.hp += randomEvent.hp;
+                const hpText = randomEvent.hp > 0 ? `+${randomEvent.hp}` : randomEvent.hp;
+                const color = randomEvent.hp > 0 ? 'text-green-700' : 'text-red-700';
+                logMessage(`HP <b class="${color}">${hpText}</b>`, color);
+            }
+
+            if (randomEvent.special === 'e-cig') {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                logMessage(`你擲骰決定如何應對...點數是 <b class="text-red-500">${roll}</b>。`);
+                if (roll % 2 === 0) {
+                    player.hp += 300;
+                    logMessage('是偶數！你堅定地拒絕了，贏得尊重！+300 HP。', 'text-green-700');
+                } else {
+                    player.hp -= 500;
+                    logMessage('是奇數...你猶豫了一下，對健康造成巨大風險！-500 HP。', 'text-red-700');
+                }
+            }
+
+            if (randomEvent.question) {
+                logMessage(`<b>【提問】</b>${randomEvent.question}`, 'text-purple-600');
+            }
+        }
+
+        // --- 結束回合 ---
+        function endTurn() {
+            currentRound++;
+            
+            if (currentRound > 0 && currentRound % 6 === 0) {
+                handlePillarReview();
+            }
+
+            updateUI();
+
+            if (player.hp <= 0) {
+                player.hp = 0;
+                gameOver('你的健康點數歸零了...');
+            } else if (currentRound >= TOTAL_ROUNDS) {
+                gameOver('10 回合結束！');
+            } else {
+                rollDiceBtn.disabled = false;
+                rollDiceBtn.textContent = '擲骰子 🎲';
+            }
+        }
+
+        // --- 6回合支柱總回顧函式 (更新為加總分) ---
+        function handlePillarReview() {
+            logMessage(`--- 第 ${currentRound} 回合：生活支柱總回顧 ---`, 'text-indigo-600 font-bold');
+            const pillarCount = pillarsEncounteredThisCycle.size;
+            
+            const encounteredPillarsText = pillarCount > 0 ? Array.from(pillarsEncounteredThisCycle).join(', ') : '無';
+            logMessage(`本週期接觸過的支柱 (${pillarCount}/6): ${encounteredPillarsText}`);
+
+            if (pillarCount >= 5) {
+                player.hp += 500;
+                logMessage(`生活非常均衡，做得很好！HP <b class="text-green-600">+500</b>`, 'text-green-700');
+            } else if (pillarCount >= 3) {
+                player.hp += 200;
+                logMessage(`生活還算均衡，繼續保持！HP <b class="text-green-600">+200</b>`, 'text-green-700');
+            } else {
+                player.hp -= 300;
+                logMessage(`生活有點失衡，要多注意其他方面！HP <b class="text-red-600">-300</b>`, 'text-red-700');
+            }
+            
+            pillarsEncounteredThisCycle.clear();
+            logMessage('下一週期的支柱紀錄已重置。');
+        }
+
+        // --- 遊戲結束 (更新為顯示總分) ---
+        function gameOver(message) {
+            gameInProgress = false;
+            rollDiceBtn.disabled = true;
+            rollDiceBtn.textContent = '遊戲結束';
+            
+            finalScoreElement.textContent = player.hp;
+            finalScoreElement.className = player.hp > STARTING_HP ? 'text-8xl font-bold text-green-500 mb-8' : 'text-8xl font-bold text-red-500 mb-8';
+
+            document.getElementById('modalMessage').textContent = message;
+            
+            setTimeout(() => {
+                gameOverModal.classList.remove('hidden');
+                setTimeout(() => {
+                    gameOverModal.classList.add('opacity-100');
+                    gameOverModal.querySelector('div').classList.add('scale-100');
+                }, 10);
+            }, 1000);
+            
+            logMessage(`--- 遊戲結束 ---`, 'font-bold');
+            logMessage(`最終HP: <b class="text-2xl">${player.hp}</b>`);
+
+            if (player.hp > STARTING_HP) {
+                logMessage(`恭喜你成為 <b class="text-indigo-600">健康生活冠軍</b>！`);
+            } else {
+                logMessage(`再接再厲，下次會更好！`);
+            }
+        }
+
+        // --- 啟動遊戲 ---
+        initializeGame();
     </script>
 </body>
 </html>
+
