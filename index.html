@@ -99,15 +99,15 @@
             display: flex;
             flex-direction: column;
             gap: 2rem;
-            align-items: center;
-            min-width: 300px;
-            max-width: 400px;
+            align-items: flex-end; /* 靠右對齊 */
+            min-width: 320px;
+            max-width: 420px;
             width: 100%;
         }
 
         .dice-container {
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
             flex-direction: column;
         }
@@ -164,12 +164,20 @@
             width: 100%;
         }
 
+        .player-info-block {
+            background-color: #fff;
+            border-radius: 1rem;
+            border: 2px solid #a7f3d0;
+            margin-bottom: 1.5rem;
+            padding: 0.7rem 1rem 1rem 1rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
         .player-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem;
-            border-bottom: 1px dashed #34d399;
+            padding: 0.5rem 0;
         }
 
         .player-info.current-turn {
@@ -185,6 +193,18 @@
             border: 1px solid white;
             margin-right: 8px;
             display: inline-block;
+        }
+
+        .player-log {
+            background-color: #f0fdf4;
+            border: 1px solid #34d399;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.7rem;
+            font-size: 0.93rem;
+            min-height: 40px;
+            max-height: 100px;
+            overflow-y: auto;
         }
 
         .modal {
@@ -235,27 +255,9 @@
             color: #166534;
             margin-bottom: 1rem;
         }
-
-        .log-panel {
-            grid-area: log;
-            background-color: white;
-            border: 2px solid #a3e635;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            overflow-y: auto;
-            max-height: 100%;
-            display: flex;
-            flex-direction: column-reverse;
-            font-size: 0.8rem;
-        }
-        .log-message {
-            margin-bottom: 0.5rem;
-        }
-
     </style>
 </head>
 <body>
-
     <div id="setup-modal" class="modal" style="display:flex;">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4">遊戲設定</h2>
@@ -316,7 +318,6 @@
         const gameModal = document.getElementById('game-modal');
         const modalContent = document.getElementById('modal-content');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        let eventLog;
         
         let players = [];
         let currentPlayerIndex = 0;
@@ -341,8 +342,7 @@
             { name: '拒絕菸酒', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「拒絕菸酒」，獲得 5 HP！`; } },
             { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
             { name: '深呼吸', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「深呼吸」，獲得 5 HP！`; } },
-            { name: '環習慣繞路', text: '進監獄', color: 'gray', effect: (player) => { player.position = 12; player.skipTurn = true; return '走到「環習慣繞路」，直接進入「不健康陷阱」，失去下一次行動！'; } },
-
+            { name: '環習慣繞路', text: '進監獄', color: 'gray', effect: (player) => { player.position = 12; player.skipTurn = true; return '走到「環習慣繞路」，直接進入「不健康陷阱」，失去下一回合！'; } },
             { name: '舞蹈教室', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「舞蹈教室」，獲得 5 HP！`; } },
             { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
             { name: '水果蔬菜市場', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「水果蔬菜市場」，獲得 5 HP！`; } },
@@ -354,7 +354,6 @@
                  return `擲出偶數 (+10 HP) 或奇數 (-5 HP)，你獲得 ${hpChange} HP！`; 
             } },
             { name: '無菸公園', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「無菸公園」，獲得 5 HP！`; } },
-
             { name: '不健康陷阱', text: '失去一回合', color: 'gray', effect: (player) => { player.skipTurn = true; return '進入「不健康陷阱」，失去下一次行動！'; } },
             { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
             { name: '冥想空間', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「冥想空間」，獲得 5 HP！`; } },
@@ -362,7 +361,6 @@
             { name: '家庭晚餐', text: '+5 HP', color: 'yellow', effect: (player) => { player.hp += 5; return `停留「家庭晚餐」，獲得 5 HP！`; } },
             { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
             { name: '自我照顧日', text: '+15 HP', color: 'gray', effect: (player) => { player.hp += 15; return `享受「自我照顧日」，獲得 15 HP！`; } },
-
             { name: '參加社團', text: '+5 HP', color: 'purple', effect: (player) => { player.hp += 5; return `停留「參加社團」，獲得 5 HP！`; } },
             { name: '六大支柱', text: '抽卡', color: 'yellow', effect: (player) => drawEventCard(player) },
             { name: '規律運動', text: '', color: 'purple', effect: (player) => {
@@ -382,7 +380,7 @@
             { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 }, { row: 0, col: 5 }, { row: 0, col: 6 },
             { row: 1, col: 6 }, { row: 2, col: 6 }, { row: 3, col: 6 }, { row: 4, col: 6 }, { row: 5, col: 6 }
         ];
-        
+
         const eventCards = {
             '營養': [
                 { text: '早餐吃燕麥＋水果', hpChange: 10 },
@@ -410,6 +408,16 @@
             ]
         };
 
+        // 為每位玩家記錄個人事件
+        function addLogMessage(msg, playerId) {
+            const logPanel = document.getElementById(`player-log-${playerId}`);
+            if (!logPanel) return;
+            const p = document.createElement('p');
+            p.classList.add('log-message');
+            p.textContent = msg;
+            logPanel.prepend(p);
+        }
+
         function showMessage(msg) {
             messageBox.textContent = msg;
             messageBox.classList.add('show');
@@ -418,37 +426,18 @@
             }, 3000);
         }
 
-        function addLogMessage(msg) {
-            if (!eventLog) return;
-            const p = document.createElement('p');
-            p.classList.add('log-message');
-            p.textContent = msg;
-            eventLog.prepend(p);
-        }
-
         function createBoard() {
             board.innerHTML = '';
-            
             for(let i=0; i<49; i++) {
                 const emptyTile = document.createElement('div');
                 emptyTile.style.backgroundColor = '#ecfdf5';
                 board.appendChild(emptyTile);
             }
-            
-            const logPanel = document.createElement('div');
-            logPanel.classList.add('log-panel');
-            logPanel.style.gridRow = '2 / 7';
-            logPanel.style.gridColumn = '2 / 7';
-            logPanel.innerHTML = '<h3 class="text-xl font-bold text-center mb-2">事件記錄</h3><div id="event-log-container"><p class="log-message">歡迎來到生活醫學大富翁！</p></div>';
-            board.appendChild(logPanel);
-            
-            eventLog = document.getElementById('event-log-container');
-
+            // 不再建立中央事件記錄
             tilesData.forEach((tile, index) => {
                 const tileDiv = document.createElement('div');
                 tileDiv.classList.add('tile');
                 tileDiv.dataset.index = index;
-                
                 if (tile.color === 'start') {
                     tileDiv.classList.add('tile-start', 'font-bold');
                 } else if (tile.color === 'gray') {
@@ -460,20 +449,17 @@
                 } else {
                     tileDiv.classList.add('tile-gray');
                 }
-
                 if (tile.name) {
                     const nameSpan = document.createElement('span');
                     nameSpan.classList.add('tile-title');
                     nameSpan.textContent = tile.name;
                     tileDiv.appendChild(nameSpan);
                 }
-                
                 if (tile.text) {
                     const textSpan = document.createElement('span');
                     textSpan.textContent = tile.text;
                     tileDiv.appendChild(textSpan);
                 }
-                
                 tileDiv.style.gridRow = `${tilePositions[index].row + 1}`;
                 tileDiv.style.gridColumn = `${tilePositions[index].col + 1}`;
                 board.appendChild(tileDiv);
@@ -484,18 +470,16 @@
             const allPillars = Object.keys(eventCards);
             const randomPillar = allPillars[Math.floor(Math.random() * allPillars.length)];
             const card = eventCards[randomPillar][Math.floor(Math.random() * eventCards[randomPillar].length)];
-            
-            addLogMessage(`${player.name} 抵達「六大支柱」，抽到一張 ${randomPillar} 事件卡。`);
-            
-            let message = '';
-            
+            addLogMessage(`抽到 ${randomPillar} 事件卡：${card.text}`, player.id);
             if (card.special === 'giveHP') {
                 showModal(`事件卡：${card.text}<br>你交到了新朋友！為他們增加 5 HP。`, () => {
                     const otherPlayers = players.filter(p => p !== player);
                     if (otherPlayers.length > 0) {
-                        otherPlayers.forEach(p => p.hp += 5);
+                        otherPlayers.forEach(p => { 
+                            p.hp += 5;
+                            addLogMessage(`${player.name} 的朋友們每人增加了 5 HP！`, p.id);
+                        });
                         updatePlayerStatus();
-                        addLogMessage(`${player.name} 的朋友們每人增加了 5 HP！`);
                     }
                     nextTurn();
                 });
@@ -505,10 +489,11 @@
                 players.forEach(p => {
                     if (p !== player) {
                         p.hp += card.hpChange;
+                        addLogMessage(`大家一起受到影響 HP${card.hpChange > 0 ? '+' : ''}${card.hpChange}！`, p.id);
                     }
                 });
                 updatePlayerStatus();
-                return `觸發事件「${card.text}」，大家一起 -10 HP！`;
+                return `觸發事件「${card.text}」，大家一起 ${card.hpChange > 0 ? '+' : ''}${card.hpChange} HP！`;
             } else if (card.special === 'diceRoll') {
                 const roll = Math.floor(Math.random() * 6) + 1;
                 let hpChange = 0;
@@ -522,7 +507,7 @@
                 }
                 player.hp += hpChange;
                 updatePlayerStatus();
-                return `觸發事件「${card.text}」！<br>你擲出 ${roll}，是 ${rollText}`;
+                return `觸發事件「${card.text}」！你擲出 ${roll}，${rollText}`;
             } else {
                 player.hp += card.hpChange;
                 updatePlayerStatus();
@@ -533,6 +518,7 @@
         function createPlayers() {
             playerTokensContainer.innerHTML = '';
             players = [];
+            playerStatus.innerHTML = '';
             for (let i = 0; i < numPlayers; i++) {
                 const player = {
                     id: i,
@@ -542,7 +528,7 @@
                     skipTurn: false,
                     tokenElement: null
                 };
-                
+                // token
                 const token = document.createElement('div');
                 token.classList.add('player-token');
                 token.style.backgroundColor = playerColors[i];
@@ -550,31 +536,50 @@
                 player.tokenElement = token;
                 playerTokensContainer.appendChild(token);
                 players.push(player);
-                updateTokenPosition(player);
+
+                // info block
+                const infoBlock = document.createElement('div');
+                infoBlock.className = 'player-info-block';
+                infoBlock.id = `player-info-block-${i}`;
+                // info row
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'player-info';
+                if (i === currentPlayerIndex) infoDiv.classList.add('current-turn');
+                infoDiv.innerHTML = `
+                    <div style="display:flex; align-items:center;">
+                        <div class="player-color-box" style="background-color: ${playerColors[player.id]};"></div>
+                        <span class="font-bold">${player.name}</span>
+                    </div>
+                    <span>HP: <span class="text-red-600 font-bold" id="player-hp-${i}">${player.hp}</span></span>
+                `;
+                infoBlock.appendChild(infoDiv);
+
+                // log
+                const logDiv = document.createElement('div');
+                logDiv.className = 'player-log';
+                logDiv.id = `player-log-${i}`;
+                logDiv.innerHTML = `<p class="log-message">歡迎加入遊戲！</p>`;
+                infoBlock.appendChild(logDiv);
+
+                playerStatus.appendChild(infoBlock);
             }
-            updatePlayerStatus();
             updateCurrentPlayerDisplay();
+            updateAllTokenPositions();
         }
 
         function updateTokenPosition(player) {
             const currentTile = document.querySelector(`.tile[data-index='${player.position}']`);
             if (!currentTile) return;
-
             const tileRect = currentTile.getBoundingClientRect();
             const containerRect = playerTokensContainer.getBoundingClientRect();
-            
             const playersAtTile = players.filter(p => p.position === player.position);
             const playerIndexAtTile = playersAtTile.indexOf(player);
-            
             const offsetMultiplier = (playersAtTile.length > 1) ? (playerIndexAtTile - (playersAtTile.length - 1) / 2) : 0;
             const xOffset = offsetMultiplier * 20;
-
             const tokenWidth = player.tokenElement.offsetWidth;
             const tokenHeight = player.tokenElement.offsetHeight;
-            
             const x = tileRect.left - containerRect.left + (tileRect.width / 2) - (tokenWidth / 2) + xOffset;
             const y = tileRect.top - containerRect.top + (tileRect.height / 2) - (tokenHeight / 2);
-
             player.tokenElement.style.transform = `translate(${x}px, ${y}px)`;
         }
 
@@ -583,21 +588,11 @@
         }
 
         function updatePlayerStatus() {
-            playerStatus.innerHTML = '';
-            players.forEach(player => {
-                const div = document.createElement('div');
-                div.classList.add('player-info', 'rounded-md');
-                if (players.indexOf(player) === currentPlayerIndex) {
-                    div.classList.add('current-turn');
-                }
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        <div class="player-color-box" style="background-color: ${playerColors[player.id]};"></div>
-                        <span class="font-bold">${player.name}</span>
-                    </div>
-                    <span>HP: <span class="text-red-600 font-bold">${player.hp}</span></span>
-                `;
-                playerStatus.appendChild(div);
+            players.forEach((player, i) => {
+                const hpSpan = document.getElementById(`player-hp-${i}`);
+                if (hpSpan) hpSpan.textContent = player.hp;
+                const infoRow = document.querySelector(`#player-info-block-${i} .player-info`);
+                if (infoRow) infoRow.classList.toggle('current-turn', i === currentPlayerIndex);
             });
         }
 
@@ -643,27 +638,22 @@
                 showMessage('請先設定遊戲並點擊「開始遊戲」！');
                 return;
             }
-
             rollDiceBtn.disabled = true;
             diceDisplay.textContent = '?';
             diceDisplay.classList.add('rolling');
-
             setTimeout(() => {
                 const roll = Math.floor(Math.random() * 6) + 1;
                 diceDisplay.textContent = roll;
                 diceDisplay.classList.remove('rolling');
-
                 const currentPlayer = players[currentPlayerIndex];
-
                 if (currentPlayer.skipTurn) {
                     showMessage(`${currentPlayer.name} 這次行動被跳過！`);
-                    addLogMessage(`${currentPlayer.name} 這次行動被跳過！`);
+                    addLogMessage(`這次行動被跳過！`, currentPlayer.id);
                     currentPlayer.skipTurn = false;
                     nextTurn();
                     rollDiceBtn.disabled = false;
                     return;
                 }
-                
                 let stepsMoved = 0;
                 const moveInterval = setInterval(() => {
                     if (stepsMoved < roll) {
@@ -674,17 +664,12 @@
                         stepsMoved++;
                     } else {
                         clearInterval(moveInterval);
-                        
                         gameTurns++;
-                        
-                        let tileEffectMessage = '';
                         const landedTile = tilesData[currentPlayer.position];
-                        addLogMessage(`${currentPlayer.name} 擲出了 ${roll} 點，抵達「${landedTile.name}」`);
-                        
+                        addLogMessage(`擲出了 ${roll} 點，抵達「${landedTile.name}」`, currentPlayer.id);
+                        let tileEffectMessage = '';
                         if (landedTile.name === '環習慣繞路') {
-                            const newPosition = 12;
-                            addLogMessage(`${currentPlayer.name} 陷入「環習慣繞路」，直接進入「不健康陷阱」！`);
-                            currentPlayer.position = newPosition;
+                            currentPlayer.position = 12;
                             updateTokenPosition(currentPlayer);
                             currentPlayer.skipTurn = true;
                             tileEffectMessage = '你失去下一次行動！';
@@ -696,14 +681,12 @@
                         } else if (landedTile.effect) {
                             tileEffectMessage = landedTile.effect(currentPlayer);
                         }
-                        
-                        addLogMessage(tileEffectMessage);
-
+                        addLogMessage(tileEffectMessage, currentPlayer.id);
+                        updatePlayerStatus();
                         nextTurn();
                         rollDiceBtn.disabled = false;
                     }
                 }, 200);
-
             }, 1000);
         });
         
